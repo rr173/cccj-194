@@ -20,8 +20,14 @@ scripts/run_demo.sh
 # 或直接 run 一个作业
 python3 -m colbatch.cli run --config examples/normalize_run.json
 
+# 数据质量画像与准入门禁（不起工人、不写清洗输出）
+python3 -m colbatch.cli preflight --config examples/quality_run.json
+
 # 跑全部故障注入测试（18 个场景）
 python3 tests/test_host.py
+
+# 跑 preflight 质量画像测试（18 个场景，含独立参考交叉验证与 RSS 有界证明）
+python3 tests/test_preflight.py
 
 # 动态生成任意规模输入
 python3 scripts/gen_input.py --profile normalize --rows 1000000 --seed 7 --out big.jsonl
@@ -275,6 +281,37 @@ max_inflight_batches, max_pending_batches, max_pending_bytes,
 max_frame_bytes, writer_queue_batches, stats_interval_ms, rlimits.*,
 fault_spec`（仅测试）、`sink_delay_ms_per_batch`（仅测试，模拟慢
 sink）。相对路径一律相对配置文件所在目录解析。
+
+## 数据质量画像与准入门禁（preflight）
+
+`colbatch preflight --config run.json` 在启动昂贵的并行清洗**之前**，对原始
+输入做完整扫描，产出可复核的质量报告并给出准入结论，**不启动插件工人、
+不创建或截断清洗输出**，也不改变插件结果合同。完整文档见
+[`docs/preflight.md`](docs/preflight.md)。
+
+要点：
+
+* **不可变快照**：先把输入流式复制为带 SHA-256、内容寻址、只读的私有快照，
+  画像只针对快照；复制前后比对文件身份与头尾哈希，源文件在复制期被替换/
+  改写则拒绝发布。快照与报告成组原子发布，任一步失败保留旧组合。
+* **单遍、内存有界、精确基数**：快照顺序读一遍，RAM 只留 O(列数) 定长聚合；
+  精确不同值写入临时 SQLite 磁盘唯一索引（非近似、非分批求和），临时状态
+  独占创建并在成功/失败/取消后清理。
+* **确定语义**：缺失按“字段不存在 / JSON null / 可配置空白串”三分；带类型
+  标记的规范键保证字符串 `"1"`、整数 `1`、浮点 `1.0`、布尔 `true` 等跨类型
+  不碰撞；空集、坏 JSON、末尾无换行、Unicode、负数、零、极大整数均有确定行为。
+* **规则**：缺失比例上限、精确唯一性下限/上限（含比例）、数值 min/max、
+  允许值集合、重复 id 上限，可组合，边界相等通过；非数字值不静默跳过数值检查。
+* **门禁接入 run**：`quality.enabled=true` 时，run 必须存在规则摘要匹配、
+  快照哈希校验通过的 admitted 报告，并以绑定快照作为输入（manifest 记录快照
+  摘要）；不通过、报告过期、摘要不符或快照损坏时绝不启动工人、不改清洗输出。
+  禁用时 run 行为完全兼容。
+* **退出码**：preflight `0` 准入 / `2` 质量拒绝 / `3` 配置错误 / `4` 数据错误 /
+  `5` 画像或发布执行错误——“质量不满足”与“画像执行失败”严格区分。
+* **独立参考**：`tests/reference_profiler.py` 用纯内存集合独立实现画像与规则，
+  `tests/test_preflight.py` 通过动态多批次输入逐项核对计数、精确基数、数值范围、
+  规则命中与准入，并用超内存预算的数据证明 RSS 有界（产品 ~38MB vs 内存参考
+  ~72MB / 15 万行）。
 
 ## 已知限制
 

@@ -1,0 +1,48 @@
+{
+  "input": "../fixtures/crossfield_small.jsonl",
+  "success_out": "../out/crossfield_success.jsonl",
+  "failure_out": "../out/crossfield_failure.jsonl",
+  "log_dir": "../out/logs",
+  "stats_path": "../out/stats.json",
+  "manifest_path": "../out/manifest.json",
+  "plugin": {"path": "../colbatch/plugins/crossfield_derive.py"},
+  "columns": [
+    {"name": "qty", "type": "int64", "field": "qty"},
+    {"name": "unit_price", "type": "utf8", "field": "unit_price"},
+    {"name": "currency", "type": "utf8", "field": "currency"},
+    {"name": "start_ts", "type": "utf8", "field": "start_ts"},
+    {"name": "end_ts", "type": "utf8", "field": "end_ts"}
+  ],
+  "batch_size": 8,
+  "workers": 2,
+  "max_attempts": 2,
+  "batch_timeout_ms": 5000,
+  "kill_grace_ms": 1000,
+  "max_inflight_batches": 8,
+  "max_pending_batches": 4,
+  "max_pending_bytes": 67108864,
+  "max_frame_bytes": 268435456,
+  "writer_queue_batches": 4,
+  "rlimits": {"cpu_seconds": 0, "as_bytes": 0, "nofile": 0},
+  "quality": {
+    "enabled": true,
+    "blank_policy": "whitespace",
+    "id_field": "qty",
+    "columns": [
+      {"name": "qty", "type": "int64", "field": "qty"},
+      {"name": "unit_price", "type": "utf8", "field": "unit_price"},
+      {"name": "currency", "type": "utf8", "field": "currency"},
+      {"name": "start_ts", "type": "utf8", "field": "start_ts"},
+      {"name": "end_ts", "type": "utf8", "field": "end_ts"}
+    ],
+    "rules": [
+      {"id": "qty-missing", "rule": "max_missing_ratio", "column": "qty", "value": 0.25},
+      {"id": "qty-range", "rule": "numeric_min", "column": "qty", "value": -100},
+      {"id": "qty-max", "rule": "numeric_max", "column": "qty", "value": 1000},
+      {"id": "currency-allowed", "rule": "allowed_values", "column": "currency",
+       "values": ["USD", "EUR", "CNY", "", "XXX"]},
+      {"id": "currency-distinct", "rule": "max_distinct", "column": "currency", "value": 10},
+      {"id": "dup-qty", "rule": "max_duplicate_ids", "column": "qty", "value": 100}
+    ]
+  }
+}

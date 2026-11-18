@@ -27,4 +27,18 @@ for k in ("status", "input_rows_read", "batches_formed", "delivered_batches",
     print(f"  {k}: {m[k]}")
 print("  counters:", json.dumps(m["counters"]))
 EOF
+
+echo "== preflight: quality profile (no workers, no output writes) =="
+$PY -m colbatch.cli preflight --config examples/quality_run.json > out/preflight_report.json
+echo "  report written to out/preflight_report.json (exit $?)"
+
+echo "== gated run: reads the immutable snapshot bound to the report =="
+$PY -m colbatch.cli run --config examples/quality_run.json
+$PY - <<'EOF'
+import json
+m = json.load(open("out/manifest.json"))
+assert m["input_source"] == "quality_gate_snapshot"
+print("  gated run input_source:", m["input_source"])
+print("  snapshot sha256:", m["input_snapshot"]["sha256"][:16], "...")
+EOF
 echo "demo OK"

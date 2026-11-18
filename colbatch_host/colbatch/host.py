@@ -236,8 +236,12 @@ class WorkerSlot:
 
 
 class Host:
-    def __init__(self, cfg: Config):
+    def __init__(self, cfg: Config, gate=None):
         self.cfg = cfg
+        # When a quality gate is enabled, the immutable snapshot bound to the
+        # verified admission report replaces the mutable source path.
+        self.gate = gate
+        self.input_path = gate.snapshot_path if gate is not None else cfg.input
         self.sel = selectors.DefaultSelector()
         self.workers = [WorkerSlot(i) for i in range(cfg.workers)]
 
@@ -267,7 +271,7 @@ class Host:
         self.consec_spawn_failures = 0
         self.expected_out_schema = None
 
-        self.input_f = open(cfg.input, "r", encoding="utf-8")
+        self.input_f = open(self.input_path, "r", encoding="utf-8")
         self.start_time = time.monotonic()
         self.last_snapshot = 0.0
 
@@ -1324,6 +1328,19 @@ class Host:
         manifest = {
             "status": manifest_status,
             "abort_reason": self.abort_reason,
+            "input_source": (
+                "quality_gate_snapshot" if self.gate is not None else "configured_input"
+            ),
+            "input_snapshot": (
+                {
+                    "path": self.gate.snapshot_path,
+                    "sha256": self.gate.snapshot_sha256,
+                    "rule_summary": self.gate.report.get("rule_summary"),
+                    "report_status": self.gate.report.get("status"),
+                }
+                if self.gate is not None
+                else None
+            ),
             "input_rows_read": self.read_rows,
             "batches_formed": self.next_batch_id,
             "delivered_batches": self.next_deliver_id,

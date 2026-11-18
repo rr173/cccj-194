@@ -1,0 +1,11 @@
+# Generated preflight artifacts (snapshots, reports, temp DBs)
+.colbatch_preflight/
+**/.colbatch_preflight/
+
+# Python
+__pycache__/
+*.pyc
+
+# Generated demo outputs / reports
+out/
+*.tmp

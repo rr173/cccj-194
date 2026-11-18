@@ -1,13 +1,20 @@
 {
  "status": "completed",
  "abort_reason": null,
+ "input_source": "quality_gate_snapshot",
+ "input_snapshot": {
+  "path": "/workspace/colbatch_host/examples/.colbatch_preflight/snapshots/snap-5dec8c1c6252520fe6d64bb192e02edcb706ab203811c938fd4ab8ec8706653b.jsonl",
+  "sha256": "5dec8c1c6252520fe6d64bb192e02edcb706ab203811c938fd4ab8ec8706653b",
+  "rule_summary": "sha256:415a88e86f08e5af6a3d7b2e46fa164deb521c148a81db4d237e335c43f655bb",
+  "report_status": "admitted"
+ },
  "input_rows_read": 30,
  "batches_formed": 4,
  "delivered_batches": 4,
  "delivered_rows_success": 30,
  "delivered_rows_failure": 0,
  "last_delivered_row_id": 29,
- "elapsed_ms": 345,
+ "elapsed_ms": 347,
  "counters": {
   "workers_spawned": 2,
   "batches_formed": 4,
@@ -45,7 +52,7 @@
   {
    "batch": 1,
    "outcome": "success",
-   "slot": 1,
+   "slot": 0,
    "generation": 1,
    "attempts": 1,
    "rows": 8
@@ -53,7 +60,7 @@
   {
    "batch": 0,
    "outcome": "success",
-   "slot": 0,
+   "slot": 1,
    "generation": 1,
    "attempts": 1,
    "rows": 8
@@ -61,7 +68,7 @@
   {
    "batch": 2,
    "outcome": "success",
-   "slot": 1,
+   "slot": 0,
    "generation": 1,
    "attempts": 1,
    "rows": 8
@@ -69,7 +76,7 @@
   {
    "batch": 3,
    "outcome": "success",
-   "slot": 0,
+   "slot": 1,
    "generation": 1,
    "attempts": 1,
    "rows": 6
@@ -79,17 +86,17 @@
   {
    "slot": 0,
    "generation": 1,
-   "pid": 3474,
+   "pid": 3611,
    "reason": "exit",
-   "maxrss_kb": 52600,
+   "maxrss_kb": 62088,
    "exit_code": 0
   },
   {
    "slot": 1,
    "generation": 1,
-   "pid": 3475,
+   "pid": 3612,
    "reason": "exit",
-   "maxrss_kb": 52736,
+   "maxrss_kb": 62520,
    "exit_code": 0
   }
  ]
