@@ -1,0 +1,24 @@
+{
+  "input": "../fixtures/normalize_small.jsonl",
+  "success_out": "../out/normalize_success.jsonl",
+  "failure_out": "../out/normalize_failure.jsonl",
+  "log_dir": "../out/logs",
+  "stats_path": "../out/stats.json",
+  "manifest_path": "../out/manifest.json",
+  "plugin": {"path": "../colbatch/plugins/normalize_text.py"},
+  "columns": [
+    {"name": "raw_ts", "type": "utf8", "field": "raw_ts"},
+    {"name": "raw_amount", "type": "utf8", "field": "raw_amount"}
+  ],
+  "batch_size": 8,
+  "workers": 2,
+  "max_attempts": 2,
+  "batch_timeout_ms": 5000,
+  "kill_grace_ms": 1000,
+  "max_inflight_batches": 8,
+  "max_pending_batches": 4,
+  "max_pending_bytes": 67108864,
+  "max_frame_bytes": 268435456,
+  "writer_queue_batches": 4,
+  "rlimits": {"cpu_seconds": 0, "as_bytes": 0, "nofile": 0}
+}

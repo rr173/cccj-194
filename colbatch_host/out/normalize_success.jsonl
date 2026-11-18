@@ -1,0 +1,30 @@
+{"row_id": 0, "source": {"raw_ts": "2025-03-22T14:32:00Z", "raw_amount": "645,628.2"}, "output": {"norm_ts": "2025-03-22T14:32:00Z", "norm_amount": "645628.20", "is_valid": true, "invalid_reason": null}}
+{"row_id": 1, "source": {"raw_ts": "2023-05-27 04:05", "raw_amount": null}, "output": {"norm_ts": "2023-05-27T04:05:00Z", "norm_amount": null, "is_valid": true, "invalid_reason": null}}
+{"row_id": 2, "source": {"raw_ts": "2025-01-29T20:47:00Z", "raw_amount": null}, "output": {"norm_ts": "2025-01-29T20:47:00Z", "norm_amount": null, "is_valid": true, "invalid_reason": null}}
+{"row_id": 3, "source": {"raw_ts": "2024-13-40", "raw_amount": "()"}, "output": {"norm_ts": null, "norm_amount": null, "is_valid": false, "invalid_reason": "bad_ts;bad_amount"}}
+{"row_id": 4, "source": {"raw_ts": "2025-03-15T10:28:00Z", "raw_amount": "$2.1"}, "output": {"norm_ts": "2025-03-15T10:28:00Z", "norm_amount": "2.10", "is_valid": true, "invalid_reason": null}}
+{"row_id": 5, "source": {"raw_ts": "2023-02-13 13:35", "raw_amount": "€"}, "output": {"norm_ts": "2023-02-13T13:35:00Z", "norm_amount": null, "is_valid": false, "invalid_reason": "bad_amount"}}
+{"row_id": 6, "source": {"raw_ts": "not-a-date", "raw_amount": null}, "output": {"norm_ts": null, "norm_amount": null, "is_valid": false, "invalid_reason": "bad_ts"}}
+{"row_id": 7, "source": {"raw_ts": "2021-03-17 09:24", "raw_amount": "  42.5 "}, "output": {"norm_ts": "2021-03-17T09:24:00Z", "norm_amount": "42.50", "is_valid": true, "invalid_reason": null}}
+{"row_id": 8, "source": {"raw_ts": "not-a-date", "raw_amount": "-407"}, "output": {"norm_ts": null, "norm_amount": "-407.00", "is_valid": false, "invalid_reason": "bad_ts"}}
+{"row_id": 9, "source": {"raw_ts": "24/03/2022", "raw_amount": "6718.97"}, "output": {"norm_ts": "2022-03-24T00:00:00Z", "norm_amount": "6718.97", "is_valid": true, "invalid_reason": null}}
+{"row_id": 10, "source": {"raw_ts": "  2021-07-05 07:45  ", "raw_amount": "7976.22"}, "output": {"norm_ts": "2021-07-05T07:45:00Z", "norm_amount": "7976.22", "is_valid": true, "invalid_reason": null}}
+{"row_id": 11, "source": {"raw_ts": "2024-13-40", "raw_amount": "  42.5 "}, "output": {"norm_ts": null, "norm_amount": "42.50", "is_valid": false, "invalid_reason": "bad_ts"}}
+{"row_id": 12, "source": {"raw_ts": "not-a-date", "raw_amount": "-1"}, "output": {"norm_ts": null, "norm_amount": "-1.00", "is_valid": false, "invalid_reason": "bad_ts"}}
+{"row_id": 13, "source": {"raw_ts": "2023-05-30T00:13:00Z", "raw_amount": "(329.73)"}, "output": {"norm_ts": "2023-05-30T00:13:00Z", "norm_amount": "-329.73", "is_valid": true, "invalid_reason": null}}
+{"row_id": 14, "source": {"raw_ts": "22/08/2021", "raw_amount": "$197.1"}, "output": {"norm_ts": "2021-08-22T00:00:00Z", "norm_amount": "197.10", "is_valid": true, "invalid_reason": null}}
+{"row_id": 15, "source": {"raw_ts": "2022-05-04T18:40:00Z", "raw_amount": "7425.16"}, "output": {"norm_ts": "2022-05-04T18:40:00Z", "norm_amount": "7425.16", "is_valid": true, "invalid_reason": null}}
+{"row_id": 16, "source": {"raw_ts": "  2025-06-04 18:08  ", "raw_amount": "12.3.4"}, "output": {"norm_ts": "2025-06-04T18:08:00Z", "norm_amount": null, "is_valid": false, "invalid_reason": "bad_amount"}}
+{"row_id": 17, "source": {"raw_ts": null, "raw_amount": null}, "output": {"norm_ts": null, "norm_amount": null, "is_valid": true, "invalid_reason": null}}
+{"row_id": 18, "source": {"raw_ts": "2024-02-30", "raw_amount": "-904"}, "output": {"norm_ts": null, "norm_amount": "-904.00", "is_valid": false, "invalid_reason": "bad_ts"}}
+{"row_id": 19, "source": {"raw_ts": "2020-11-17 13:03", "raw_amount": "262,244.6"}, "output": {"norm_ts": "2020-11-17T13:03:00Z", "norm_amount": "262244.60", "is_valid": true, "invalid_reason": null}}
+{"row_id": 20, "source": {"raw_ts": "2025-07-04T09:33:00Z", "raw_amount": "  42.5 "}, "output": {"norm_ts": "2025-07-04T09:33:00Z", "norm_amount": "42.50", "is_valid": true, "invalid_reason": null}}
+{"row_id": 21, "source": {"raw_ts": "  2021-06-01 07:30  ", "raw_amount": null}, "output": {"norm_ts": "2021-06-01T07:30:00Z", "norm_amount": null, "is_valid": true, "invalid_reason": null}}
+{"row_id": 22, "source": {"raw_ts": "  2020-10-30 08:13  ", "raw_amount": "  42.5 "}, "output": {"norm_ts": "2020-10-30T08:13:00Z", "norm_amount": "42.50", "is_valid": true, "invalid_reason": null}}
+{"row_id": 23, "source": {"raw_ts": "2020-03-08", "raw_amount": "2887.36"}, "output": {"norm_ts": "2020-03-08T00:00:00Z", "norm_amount": "2887.36", "is_valid": true, "invalid_reason": null}}
+{"row_id": 24, "source": {"raw_ts": "2021-06-22T02:23:00Z", "raw_amount": "  42.5 "}, "output": {"norm_ts": "2021-06-22T02:23:00Z", "norm_amount": "42.50", "is_valid": true, "invalid_reason": null}}
+{"row_id": 25, "source": {"raw_ts": "  2025-11-07 18:08  ", "raw_amount": null}, "output": {"norm_ts": "2025-11-07T18:08:00Z", "norm_amount": null, "is_valid": true, "invalid_reason": null}}
+{"row_id": 26, "source": {"raw_ts": "  2025-04-28 11:44  ", "raw_amount": "9803.81"}, "output": {"norm_ts": "2025-04-28T11:44:00Z", "norm_amount": "9803.81", "is_valid": true, "invalid_reason": null}}
+{"row_id": 27, "source": {"raw_ts": "02/10/2020", "raw_amount": "7423.69"}, "output": {"norm_ts": "2020-10-02T00:00:00Z", "norm_amount": "7423.69", "is_valid": true, "invalid_reason": null}}
+{"row_id": 28, "source": {"raw_ts": "2020-07-01T23:47:00Z", "raw_amount": "€"}, "output": {"norm_ts": "2020-07-01T23:47:00Z", "norm_amount": null, "is_valid": false, "invalid_reason": "bad_amount"}}
+{"row_id": 29, "source": {"raw_ts": "2025-04-22", "raw_amount": "  42.5 "}, "output": {"norm_ts": "2025-04-22T00:00:00Z", "norm_amount": "42.50", "is_valid": true, "invalid_reason": null}}

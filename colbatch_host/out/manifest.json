@@ -1,0 +1,96 @@
+{
+ "status": "completed",
+ "abort_reason": null,
+ "input_rows_read": 30,
+ "batches_formed": 4,
+ "delivered_batches": 4,
+ "delivered_rows_success": 30,
+ "delivered_rows_failure": 0,
+ "last_delivered_row_id": 29,
+ "elapsed_ms": 345,
+ "counters": {
+  "workers_spawned": 2,
+  "batches_formed": 4,
+  "handshakes": 2,
+  "batches_dispatched": 4,
+  "batches_completed": 4,
+  "rows_success": 30,
+  "clean_bye": 2
+ },
+ "hwm": {
+  "inflight_batches": 4,
+  "pending_batches": 2,
+  "pending_bytes": 4656,
+  "retained_batches": 4,
+  "ipc_buffer_bytes": 90
+ },
+ "limits": {
+  "batch_size": 8,
+  "workers": 2,
+  "max_attempts": 2,
+  "batch_timeout_ms": 5000,
+  "kill_grace_ms": 1000,
+  "max_inflight_batches": 8,
+  "max_pending_batches": 4,
+  "max_pending_bytes": 67108864,
+  "max_frame_bytes": 268435456,
+  "writer_queue_batches": 4,
+  "rlimits": {
+   "cpu_seconds": 0,
+   "as_bytes": 0,
+   "nofile": 0
+  }
+ },
+ "completed_log": [
+  {
+   "batch": 1,
+   "outcome": "success",
+   "slot": 1,
+   "generation": 1,
+   "attempts": 1,
+   "rows": 8
+  },
+  {
+   "batch": 0,
+   "outcome": "success",
+   "slot": 0,
+   "generation": 1,
+   "attempts": 1,
+   "rows": 8
+  },
+  {
+   "batch": 2,
+   "outcome": "success",
+   "slot": 1,
+   "generation": 1,
+   "attempts": 1,
+   "rows": 8
+  },
+  {
+   "batch": 3,
+   "outcome": "success",
+   "slot": 0,
+   "generation": 1,
+   "attempts": 1,
+   "rows": 6
+  }
+ ],
+ "worker_exit_log": [
+  {
+   "slot": 0,
+   "generation": 1,
+   "pid": 3474,
+   "reason": "exit",
+   "maxrss_kb": 52600,
+   "exit_code": 0
+  },
+  {
+   "slot": 1,
+   "generation": 1,
+   "pid": 3475,
+   "reason": "exit",
+   "maxrss_kb": 52736,
+   "exit_code": 0
+  }
+ ]
+}
