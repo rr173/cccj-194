@@ -25,6 +25,7 @@ Design notes (see README.md for the full description):
 from __future__ import annotations
 
 import collections
+import hashlib
 import json
 import os
 import queue
@@ -270,6 +271,11 @@ class Host:
         self.worker_exit_log = collections.deque(maxlen=500)
         self.consec_spawn_failures = 0
         self.expected_out_schema = None
+        # Plugin identity reported by the first worker handshake; every later
+        # handshake must agree (a plugin file swapped mid-run is an integrity
+        # problem, not a new generation).  Recorded in the manifest so that
+        # `colbatch compare` can attribute results to a run/plugin identity.
+        self.plugin_identity = None
 
         self.input_f = open(self.input_path, "r", encoding="utf-8")
         self.start_time = time.monotonic()
@@ -278,6 +284,11 @@ class Host:
         self.writer_q = queue.Queue(maxsize=cfg.writer_queue_batches)
         self.written = {"items": 0, "success_rows": 0, "failure_rows": 0, "last_row_id": -1}
         self.written_lock = threading.Lock()
+        # SHA-256 over the exact bytes delivered to each output stream; the
+        # writer thread is the only writer, so it hashes every line as it is
+        # emitted.  Published in the manifest for `colbatch compare` to
+        # verify artifacts against.
+        self.out_digests = {"success": hashlib.sha256(), "failure": hashlib.sha256()}
         self.items_enqueued = 0
         self.writer_error = None
         self.writer_thread = threading.Thread(
@@ -728,6 +739,22 @@ class Host:
             self._send_frame(w, proto.HELLO_ACK, {"ok": False, "error": "protocol version mismatch"})
             self._spawn_failed(w, "version_mismatch")
             return
+        plugin_meta = meta.get("plugin") or {}
+        identity = {
+            "name": str(plugin_meta.get("name", "")),
+            "version": str(plugin_meta.get("version", "")),
+        }
+        if self.plugin_identity is None:
+            self.plugin_identity = identity
+        elif identity != self.plugin_identity:
+            # A worker of the same job reporting a different plugin identity
+            # means the plugin file changed under a running job; refuse to
+            # mix results across identities.
+            self._send_frame(
+                w, proto.HELLO_ACK, {"ok": False, "error": "plugin identity changed mid-run"}
+            )
+            self._spawn_failed(w, "plugin_identity_mismatch")
+            return
         if not in_schema.equals(self.cfg.input_schema):
             self._send_frame(
                 w,
@@ -1102,24 +1129,28 @@ class Host:
                     cols = batch.result
                     for i, rid in enumerate(batch.row_ids):
                         out = {name: vals[i] for name, vals in cols.items()}
-                        succ.write(
+                        line = (
                             json.dumps(
                                 {"row_id": rid, "source": batch.records[i], "output": out},
                                 ensure_ascii=False,
                             )
                             + "\n"
                         )
+                        succ.write(line)
+                        self.out_digests["success"].update(line.encode("utf-8"))
                     with self.written_lock:
                         self.written["success_rows"] += len(batch.row_ids)
                 else:
                     for i, rid in enumerate(batch.row_ids):
-                        fail.write(
+                        line = (
                             json.dumps(
                                 {"row_id": rid, "source": batch.records[i], "error": batch.error},
                                 ensure_ascii=False,
                             )
                             + "\n"
                         )
+                        fail.write(line)
+                        self.out_digests["failure"].update(line.encode("utf-8"))
                     with self.written_lock:
                         self.written["failure_rows"] += len(batch.row_ids)
                 succ.flush()
@@ -1328,6 +1359,7 @@ class Host:
         manifest = {
             "status": manifest_status,
             "abort_reason": self.abort_reason,
+            "plugin": self.plugin_identity,
             "input_source": (
                 "quality_gate_snapshot" if self.gate is not None else "configured_input"
             ),
@@ -1347,6 +1379,22 @@ class Host:
             "delivered_rows_success": self.written["success_rows"],
             "delivered_rows_failure": self.written["failure_rows"],
             "last_delivered_row_id": self.written["last_row_id"],
+            # Content digests of the delivered streams, computed over the
+            # exact bytes written; `colbatch compare` re-hashes the artifacts
+            # and refuses to reconcile a run whose outputs do not match the
+            # digests and row counts recorded here.
+            "outputs": {
+                "success": {
+                    "path": self.cfg.success_out,
+                    "sha256": self.out_digests["success"].hexdigest(),
+                    "rows": self.written["success_rows"],
+                },
+                "failure": {
+                    "path": self.cfg.failure_out,
+                    "sha256": self.out_digests["failure"].hexdigest(),
+                    "rows": self.written["failure_rows"],
+                },
+            },
             "elapsed_ms": int((time.monotonic() - self.start_time) * 1000),
             "counters": dict(self.counters),
             "hwm": dict(self.hwm),

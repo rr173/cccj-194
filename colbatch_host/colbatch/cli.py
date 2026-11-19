@@ -3,11 +3,21 @@
 Usage:
     python -m colbatch.cli run --config run.json
     python -m colbatch.cli preflight --config run.json
+    python -m colbatch.cli compare --config compare.json
+    python -m colbatch.cli compare-status --config compare.json
 
 Exit codes:
     run        0 = completed, 3 = cancelled by signal, 1 = aborted/config/gate error
     preflight  0 = admitted, 2 = quality rules rejected, 3 = config error,
                4 = input data error, 5 = profiling/publish execution error
+    compare    0 = reconciled and report published (changes are data, not an
+               error), 3 = config error, 4 = runs cannot be reconciled
+               (missing/inconsistent/corrupt inputs), 5 = comparator
+               execution error (I/O, input mutated mid-compare, cancel)
+    compare-status
+               0 = a complete verified report exists, 3 = config error,
+               4 = no valid report (never compared, corrupt, or detail
+               digest mismatch)
 """
 
 from __future__ import annotations
@@ -22,6 +32,12 @@ import sys
 if __package__ in (None, ""):
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from colbatch.compare import (
+    CompareConfig,
+    CompareConfigError,
+    query_status,
+    run_compare,
+)
 from colbatch.preflight import (
     EXIT_CONFIG_ERROR,
     EXIT_DATA_ERROR,
@@ -159,6 +175,104 @@ def _cmd_run(config_path: str) -> int:
     return Host(cfg, gate=gate).run()
 
 
+def _load_compare_config(config_path: str):
+    """Parse the compare config file; raises CompareConfigError."""
+    try:
+        with open(config_path, "r", encoding="utf-8") as fh:
+            raw = json.load(fh)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise CompareConfigError(f"cannot read config: {exc}") from exc
+    base_dir = os.path.dirname(os.path.abspath(config_path))
+    return CompareConfig(raw, base_dir)
+
+
+def _install_cancel_flag():
+    """Cooperative cancellation: first signal sets a flag checked inside the
+    merge loop so finally-blocks remove every staged artifact before exit."""
+    cancel = {"flag": False}
+
+    def _on_signal(signum, frame):
+        cancel["flag"] = True
+
+    old_int = signal.signal(signal.SIGINT, _on_signal)
+    old_term = signal.signal(signal.SIGTERM, _on_signal)
+    return cancel, old_int, old_term
+
+
+def _cmd_compare(config_path: str) -> int:
+    try:
+        config = _load_compare_config(config_path)
+    except CompareConfigError as exc:
+        print(f"config error: {exc}", file=sys.stderr)
+        return EXIT_CONFIG_ERROR
+
+    cancel, old_int, old_term = _install_cancel_flag()
+    try:
+        outcome = run_compare(config, cancel_flag=lambda: cancel["flag"])
+    finally:
+        signal.signal(signal.SIGINT, old_int)
+        signal.signal(signal.SIGTERM, old_term)
+
+    if outcome.error is not None:
+        print(
+            json.dumps({"compare": "error", **outcome.error}, ensure_ascii=False),
+            file=sys.stderr,
+        )
+        if outcome.error.get("kind") == "data_error":
+            print(
+                "compare: the two runs cannot be reconciled; no report was "
+                "published and any previous report is untouched",
+                file=sys.stderr,
+            )
+        else:
+            print(
+                "compare: execution error; no report was published and any "
+                "previous report is untouched",
+                file=sys.stderr,
+            )
+        return outcome.exit_code
+
+    with open(outcome.report_path, "r", encoding="utf-8") as fh:
+        print(fh.read())
+    summary = outcome.report["summary"]
+    print(
+        f"compare: OK — {summary['rows_compared']} rows compared, "
+        f"{summary['changed_rows']} changed "
+        f"(fields={summary['success_fields_changed']}, "
+        f"s→f={summary['success_to_failure']}, "
+        f"f→s={summary['failure_to_success']}, "
+        f"reason={summary['failure_reason_changed']}); "
+        f"report: {outcome.report_path}",
+        file=sys.stderr,
+    )
+    return 0
+
+
+def _cmd_compare_status(config_path: str) -> int:
+    try:
+        config = _load_compare_config(config_path)
+    except CompareConfigError as exc:
+        print(f"config error: {exc}", file=sys.stderr)
+        return EXIT_CONFIG_ERROR
+    outcome = query_status(config)
+    if outcome.error is not None:
+        print(
+            json.dumps({"compare_status": "invalid", **outcome.error},
+                       ensure_ascii=False),
+            file=sys.stderr,
+        )
+        return outcome.exit_code
+    with open(config.report_path, "r", encoding="utf-8") as fh:
+        print(fh.read())
+    summary = outcome.report["summary"]
+    print(
+        f"compare-status: report valid — {summary['rows_compared']} rows, "
+        f"{summary['changed_rows']} changed",
+        file=sys.stderr,
+    )
+    return 0
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="colbatch")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -173,11 +287,29 @@ def main(argv=None) -> int:
     )
     pre.add_argument("--config", required=True, help="path to the run config JSON")
 
+    cmp_p = sub.add_parser(
+        "compare",
+        help="reconcile two completed runs of the same quality snapshot "
+        "row by row and publish an auditable change set",
+    )
+    cmp_p.add_argument("--config", required=True, help="path to the compare config JSON")
+
+    stat_p = sub.add_parser(
+        "compare-status",
+        help="read-only check of the published comparison report and its "
+        "detail artifact",
+    )
+    stat_p.add_argument("--config", required=True, help="path to the compare config JSON")
+
     args = parser.parse_args(argv)
     if args.cmd == "run":
         return _cmd_run(args.config)
     if args.cmd == "preflight":
         return _cmd_preflight(args.config)
+    if args.cmd == "compare":
+        return _cmd_compare(args.config)
+    if args.cmd == "compare-status":
+        return _cmd_compare_status(args.config)
     return 1
 
 

@@ -1,0 +1,13 @@
+{
+  "baseline": {
+    "manifest": "../out/compare_base/logs/manifest.json",
+    "success": "../out/compare_base/success.jsonl",
+    "failure": "../out/compare_base/failure.jsonl"
+  },
+  "candidate": {
+    "manifest": "../out/compare_cand/logs/manifest.json",
+    "success": "../out/compare_cand/success.jsonl",
+    "failure": "../out/compare_cand/failure.jsonl"
+  },
+  "report_dir": "../out/compare_recon"
+}

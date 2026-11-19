@@ -1,6 +1,10 @@
 {
  "status": "completed",
  "abort_reason": null,
+ "plugin": {
+  "name": "crossfield_derive",
+  "version": "1.0"
+ },
  "input_source": "quality_gate_snapshot",
  "input_snapshot": {
   "path": "/workspace/colbatch_host/examples/.colbatch_preflight/snapshots/snap-5dec8c1c6252520fe6d64bb192e02edcb706ab203811c938fd4ab8ec8706653b.jsonl",
@@ -14,7 +18,19 @@
  "delivered_rows_success": 30,
  "delivered_rows_failure": 0,
  "last_delivered_row_id": 29,
- "elapsed_ms": 347,
+ "outputs": {
+  "success": {
+   "path": "/workspace/colbatch_host/out/crossfield_success.jsonl",
+   "sha256": "9224851a07805441ee0f0f9b0dd61e9121c1e3bf67793e938419f91499f341d6",
+   "rows": 30
+  },
+  "failure": {
+   "path": "/workspace/colbatch_host/out/crossfield_failure.jsonl",
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "rows": 0
+  }
+ },
+ "elapsed_ms": 353,
  "counters": {
   "workers_spawned": 2,
   "batches_formed": 4,
@@ -26,8 +42,8 @@
  },
  "hwm": {
   "inflight_batches": 4,
-  "pending_batches": 2,
-  "pending_bytes": 4656,
+  "pending_batches": 3,
+  "pending_bytes": 6643,
   "retained_batches": 4,
   "ipc_buffer_bytes": 90
  },
@@ -50,17 +66,9 @@
  },
  "completed_log": [
   {
-   "batch": 1,
-   "outcome": "success",
-   "slot": 0,
-   "generation": 1,
-   "attempts": 1,
-   "rows": 8
-  },
-  {
    "batch": 0,
    "outcome": "success",
-   "slot": 1,
+   "slot": 0,
    "generation": 1,
    "attempts": 1,
    "rows": 8
@@ -76,27 +84,35 @@
   {
    "batch": 3,
    "outcome": "success",
-   "slot": 1,
+   "slot": 0,
    "generation": 1,
    "attempts": 1,
    "rows": 6
+  },
+  {
+   "batch": 1,
+   "outcome": "success",
+   "slot": 1,
+   "generation": 1,
+   "attempts": 1,
+   "rows": 8
   }
  ],
  "worker_exit_log": [
   {
-   "slot": 0,
+   "slot": 1,
    "generation": 1,
-   "pid": 3611,
+   "pid": 5154,
    "reason": "exit",
-   "maxrss_kb": 62088,
+   "maxrss_kb": 52376,
    "exit_code": 0
   },
   {
-   "slot": 1,
+   "slot": 0,
    "generation": 1,
-   "pid": 3612,
+   "pid": 5153,
    "reason": "exit",
-   "maxrss_kb": 62520,
+   "maxrss_kb": 52204,
    "exit_code": 0
   }
  ]

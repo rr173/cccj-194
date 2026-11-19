@@ -23,11 +23,18 @@ python3 -m colbatch.cli run --config examples/normalize_run.json
 # 数据质量画像与准入门禁（不起工人、不写清洗输出）
 python3 -m colbatch.cli preflight --config examples/quality_run.json
 
+# 两次运行之间的逐行结果对账（清洗升级审核）
+python3 -m colbatch.cli compare --config examples/compare_runs.json
+python3 -m colbatch.cli compare-status --config examples/compare_runs.json
+
 # 跑全部故障注入测试（18 个场景）
 python3 tests/test_host.py
 
-# 跑 preflight 质量画像测试（18 个场景，含独立参考交叉验证与 RSS 有界证明）
+# 跑 preflight 质量画像测试（19 个场景，含独立参考交叉验证与 RSS 有界证明）
 python3 tests/test_preflight.py
+
+# 跑 compare 对账测试（17 个场景，含独立参考对账器交叉验证与 RSS 有界证明）
+python3 tests/test_compare.py
 
 # 动态生成任意规模输入
 python3 scripts/gen_input.py --profile normalize --rows 1000000 --seed 7 --out big.jsonl
@@ -44,7 +51,10 @@ python3 scripts/gen_input.py --profile normalize --rows 1000000 --seed 7 --out b
   离；`error.cause` 区分 `batch_timeout` / `worker_crash` /
   `protocol_violation:*` / `plugin_error:*` / `intake_error`；
 * `manifest.json`：终态清单（状态、交付到哪个输入位置、计数、水位、每批
-  结局、工人退出日志含 maxrss）；
+  结局、工人退出日志含 maxrss）；另记录 `plugin`（工人握手上报的插件身
+  份，同作业各代次必须一致）与 `outputs.success/failure`（交付流的
+  SHA-256 与行数，writer 线程边写边算）——后两者是 `compare` 验证运行
+  身份与产物完整性的锚点；
 * `stats.json`：运行期快照（默认每 200ms 原子刷新），测试与运维用它做同
   步与观测。
 
@@ -312,6 +322,43 @@ sink）。相对路径一律相对配置文件所在目录解析。
   `tests/test_preflight.py` 通过动态多批次输入逐项核对计数、精确基数、数值范围、
   规则命中与准入，并用超内存预算的数据证明 RSS 有界（产品 ~38MB vs 内存参考
   ~72MB / 15 万行）。
+
+## 运行间逐行对账（compare）
+
+`colbatch compare --config compare.json` 在**同一不可变质量快照**上，对两
+次完整运行的交付结果做逐行对账，产出可审阅、可复现的逐行变化集，用于在
+替换下游数据前审核插件/清洗配置的升级。完整文档见
+[`docs/compare.md`](docs/compare.md)。
+
+要点：
+
+* **清单即锚点**：两次运行必须均为完整成功结束、可验证且绑定同一快照摘
+  要；清单记录插件身份与每个交付流的 SHA-256/行数，比较器重新哈希全部产
+  物。取消、部分交付、不同快照、缺失或不一致的清单/产物一律拒绝对账
+  （退出码 4），绝不生成看似完整的报告。
+* **身份配对**：每侧 success/failure 两流按 row_id 有界归并，再同步归并
+  两侧；同一快照的每个源行恰好配对一次。重复/缺失/越界/乱序 row_id、成
+  功失败身份冲突、覆盖不一致都是数据错误；绝不按行号或成功流位置拉链。
+* **逐行分类**：`unchanged` / `success_fields_changed` /
+  `success_to_failure` / `failure_to_success` /
+  `failure_reason_changed`。成功变化给出 JSON-Pointer 稳定路径与两侧值；
+  JSON 比较区分 null/布尔/数字/字符串/数组/对象，对象键序不制造虚假变
+  化、数组顺序有意义；失败原因变化是差异证据，但批号、重试历史、PID、
+  时间戳、临时路径等运行器字段不算转换值变化。
+* **确定性报告**：明细（内容寻址、只读、按 row_id 排序的 JSONL）与汇总
+  作为一组原子发布；失败不留半份新报告、不破坏旧报告。报告含两侧快照
+  摘要、运行/插件身份、产物摘要与对账统计，路径只用相对标识。
+  `colbatch compare-status` 只读校验报告与明细的一致性。
+* **有界内存**：四条流归并消费，任何时刻每流至多一条记录在内存（实测
+  6 万行/侧约 21 MB RSS）；比较期间输入被原位改写会被检测并拒绝发布，
+  路径被替换则继续消费已打开的同一字节版本。
+* **退出码**：`0` 对账完成（变化是数据）/ `3` 配置错误 / `4` 输入不一
+  致（数据错误）/ `5` 执行错误（含取消与输入中途被改写）。
+* **独立参考**：`tests/reference_reconcile.py` 不复用产品配对/差异实现，
+  `tests/test_compare.py` 用动态构造的两侧运行逐行核对分类、字段差异、
+  汇总与排序，并实测内存与暂存有界。
+
+它不替代 preflight 的原始输入画像，也不自动批准或发布候选清洗结果。
 
 ## 已知限制
 
