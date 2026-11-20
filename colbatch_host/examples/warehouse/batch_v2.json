@@ -1,0 +1,16 @@
+{
+  "db": "../../out/warehouse_demo/warehouse.sqlite",
+  "batch_id": "delivery-2025-06-01-2",
+  "expected_parent_version": 1,
+  "cleaning_run": {
+    "manifest": "../../out/warehouse_demo/v2_manifest.json",
+    "success": "../../out/warehouse_demo/v2_success.jsonl",
+    "failure": "../../out/warehouse_demo/v2_failure.jsonl"
+  },
+  "assignments": "../../out/warehouse_demo/assign_v2.jsonl",
+  "workspace_dir": "../../out/warehouse_demo/work",
+  "receipt": "../../out/warehouse_demo/receipt_v2.json",
+  "limits": {
+    "access_audit": true
+  }
+}

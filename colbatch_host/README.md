@@ -36,6 +36,12 @@ python3 tests/test_preflight.py
 # 跑 compare 对账测试（17 个场景，含独立参考对账器交叉验证与 RSS 有界证明）
 python3 tests/test_compare.py
 
+# 配送归属数仓：真实清洗 → 两版入库 → 历史版本导出（文档时间切片）
+python3 scripts/warehouse_demo.py --outdir out/warehouse_demo
+
+# 数仓测试（12 个场景，含独立参考器逐版本核对、并发/崩溃/拒绝/规模局部性）
+python3 tests/test_warehouse.py
+
 # 动态生成任意规模输入
 python3 scripts/gen_input.py --profile normalize --rows 1000000 --seed 7 --out big.jsonl
 ```
@@ -359,6 +365,37 @@ sink）。相对路径一律相对配置文件所在目录解析。
   汇总与排序，并实测内存与暂存有界。
 
 它不替代 preflight 的原始输入画像，也不自动批准或发布候选清洗结果。
+
+## 配送归属数仓（warehouse-apply / warehouse-export）
+
+在现有 CLI 之上增加一个 SQLite 配送归属数仓，完整文档见
+[`docs/warehouse.md`](docs/warehouse.md)。
+
+```bash
+python3 -m colbatch.cli warehouse-apply  --config batch.json      # 入库发布
+python3 -m colbatch.cli warehouse-export --db wh.sqlite --revision 1
+python3 -m colbatch.cli warehouse-export --db wh.sqlite --revision latest
+python3 -m colbatch.cli warehouse-status --db wh.sqlite
+```
+
+要点：
+
+* **入库复用清洗产物**：读取 `colbatch run` 的 manifest + success/failure
+  流，核验完成状态、两条流字节摘要、计数与 `[0,input_rows_read)` 的源行
+  完整覆盖；以实际消费的字节为准。可叠加运单撤销文件与站点归属改动文
+  件，任意组合。
+* **排除项是数据**：失败行、`is_valid=false` 行、以及 `is_valid=true` 但
+  缺必填值的行记为排除项并附运行身份/源行号/原因（缺值行保留该运单原状
+  态）；结构错误或声称合格却带错类型/非法时间/非法金额则整批拒绝。
+* **归属回填**：`(station_id, assignment_id)` 区间按 `from <= t < to` 匹配；
+  历史版本存 SCD2 行，后续更正只写受影响的运单和日汇总键，导出历史版本
+  永远看到当时快照。回执给出实际重判历史运单数、变更明细/汇总键数与查询
+  计划。
+* **重试与冲突**：相同 `batch_id` + 父版本 + 相同输入字节返回原版本（不
+  依赖路径）；内容不同或父版本过期报冲突；同父版本并发最多一个成功；提
+  交前后两种中止都可重跑恢复。
+* **独立参考**：`tests/reference_warehouse.py` 从头重算每版明细/汇总/排除
+  项，`tests/test_warehouse.py` 逐版本核对。
 
 ## 已知限制
 

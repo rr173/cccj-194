@@ -5,6 +5,9 @@ Usage:
     python -m colbatch.cli preflight --config run.json
     python -m colbatch.cli compare --config compare.json
     python -m colbatch.cli compare-status --config compare.json
+    python -m colbatch.cli warehouse-apply --config batch.json
+    python -m colbatch.cli warehouse-export --db wh.sqlite --revision latest
+    python -m colbatch.cli warehouse-status --db wh.sqlite
 
 Exit codes:
     run        0 = completed, 3 = cancelled by signal, 1 = aborted/config/gate error
@@ -18,6 +21,16 @@ Exit codes:
                0 = a complete verified report exists, 3 = config error,
                4 = no valid report (never compared, corrupt, or detail
                digest mismatch)
+    warehouse-apply
+               0 = revision published (or the identical batch returned its
+               original revision), 3 = config error, 4 = batch rejected as a
+               whole, 5 = execution error (nothing published), 6 = conflict
+               (batch id reuse with different content, stale parent)
+    warehouse-export
+               0 = exported and verified, 3 = config error, 5 = execution
+               error (missing db / unknown revision / inconsistent state)
+    warehouse-status
+               0 = printed revision list, 3 = config error, 5 = missing db
 """
 
 from __future__ import annotations
@@ -273,6 +286,85 @@ def _cmd_compare_status(config_path: str) -> int:
     return 0
 
 
+def _cmd_warehouse_apply(config_path: str) -> int:
+    from colbatch.warehouse.api import apply_batch
+    from colbatch.warehouse.config import WarehouseConfig, WarehouseConfigError
+
+    try:
+        with open(config_path, "r", encoding="utf-8") as fh:
+            raw = json.load(fh)
+        base_dir = os.path.dirname(os.path.abspath(config_path))
+        config = WarehouseConfig(raw, base_dir=base_dir)
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"config error: cannot read config: {exc}", file=sys.stderr)
+        return 3
+    except WarehouseConfigError as exc:
+        print(f"config error: {exc}", file=sys.stderr)
+        return 3
+
+    result = apply_batch(config)
+    if result.error is not None:
+        print(json.dumps({"warehouse_apply": "error", **result.error},
+                         ensure_ascii=False), file=sys.stderr)
+        return result.exit_code
+    receipt = result.payload.get("receipt", result.payload)
+    summary = {
+        "status": result.payload.get("status"),
+        "batch_id": receipt.get("batch_id", config.batch_id),
+        "revision": result.payload.get("revision"),
+        "parent_revision": receipt.get("parent_revision"),
+        "head_revision": result.payload.get("head_revision"),
+        "metrics": receipt.get("metrics"),
+    }
+    print(json.dumps(summary, ensure_ascii=False, indent=1, sort_keys=True))
+    return 0
+
+
+def _cmd_warehouse_export(args) -> int:
+    from colbatch.warehouse.config import WarehouseConfig, WarehouseConfigError
+    from colbatch.warehouse.query import export_revision
+
+    db_path = os.path.abspath(args.db)
+    try:
+        config = WarehouseConfig(
+            {"db": db_path, "_mode": "read"},
+            base_dir=os.path.dirname(db_path),
+        )
+        outcome = export_revision(
+            config, args.revision, fmt=args.format, output_path=args.out,
+            stream=None if args.out else sys.stdout, verify=not args.no_verify)
+    except WarehouseConfigError as exc:
+        print(f"config error: {exc}", file=sys.stderr)
+        return 3
+    except Exception as exc:  # noqa: BLE001 - mapped to a documented exit code
+        reason = getattr(exc, "reason", "exec_error")
+        message = getattr(exc, "message", str(exc))
+        print(json.dumps({"warehouse_export": "error", "reason": reason,
+                          "message": message}, ensure_ascii=False),
+              file=sys.stderr)
+        return 5
+    print(json.dumps({"warehouse_export": "ok", **outcome.payload},
+                     ensure_ascii=False), file=sys.stderr)
+    return 0
+
+
+def _cmd_warehouse_status(args) -> int:
+    from colbatch.warehouse.api import status_payload
+    try:
+        payload = status_payload(os.path.abspath(args.db),
+                                 revision=args.revision,
+                                 batch_id=args.batch_id)
+    except Exception as exc:  # noqa: BLE001
+        reason = getattr(exc, "reason", "exec_error")
+        message = getattr(exc, "message", str(exc))
+        print(json.dumps({"warehouse_status": "error", "reason": reason,
+                          "message": message}, ensure_ascii=False),
+              file=sys.stderr)
+        return 5
+    print(json.dumps(payload, ensure_ascii=False, indent=1, sort_keys=True))
+    return 0
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="colbatch")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -301,6 +393,36 @@ def main(argv=None) -> int:
     )
     stat_p.add_argument("--config", required=True, help="path to the compare config JSON")
 
+    wa = sub.add_parser(
+        "warehouse-apply",
+        help="ingest one batch (cleaning run and/or cancellations/assignment "
+        "changes) into the shipment-attribution warehouse as a new revision",
+    )
+    wa.add_argument("--config", required=True, help="path to the batch config JSON")
+
+    we = sub.add_parser(
+        "warehouse-export",
+        help="export one historical revision (or latest) as a verified stream "
+        "or file group",
+    )
+    we.add_argument("--db", required=True, help="warehouse SQLite database")
+    we.add_argument("--revision", default="latest",
+                    help="revision number or 'latest' (default)")
+    we.add_argument("--out", default=None,
+                    help="write to this JSONL file; default is stdout")
+    we.add_argument("--format", choices=["jsonl", "files"], default="jsonl",
+                    help="single typed stream (default) or an equivalent file group")
+    we.add_argument("--no-verify", action="store_true",
+                    help="skip the revision fingerprint check")
+
+    ws = sub.add_parser(
+        "warehouse-status",
+        help="print the revision list (and optionally one batch's receipt)",
+    )
+    ws.add_argument("--db", required=True, help="warehouse SQLite database")
+    ws.add_argument("--revision", default=None, help="show one revision's header")
+    ws.add_argument("--batch-id", default=None, help="show one batch's stored receipt")
+
     args = parser.parse_args(argv)
     if args.cmd == "run":
         return _cmd_run(args.config)
@@ -310,6 +432,12 @@ def main(argv=None) -> int:
         return _cmd_compare(args.config)
     if args.cmd == "compare-status":
         return _cmd_compare_status(args.config)
+    if args.cmd == "warehouse-apply":
+        return _cmd_warehouse_apply(args.config)
+    if args.cmd == "warehouse-export":
+        return _cmd_warehouse_export(args)
+    if args.cmd == "warehouse-status":
+        return _cmd_warehouse_status(args)
     return 1
 
 

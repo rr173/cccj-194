@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/workspace/colbatch_host/colbatch/worker.py", line 60, in <module>
+    from colbatch.sdk import (  # noqa: E402
+  File "/workspace/colbatch_host/colbatch/sdk.py", line 35, in <module>
+    import pyarrow as pa
+ModuleNotFoundError: No module named 'pyarrow'

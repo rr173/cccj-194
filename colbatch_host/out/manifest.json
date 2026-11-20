@@ -30,7 +30,7 @@
    "rows": 0
   }
  },
- "elapsed_ms": 353,
+ "elapsed_ms": 352,
  "counters": {
   "workers_spawned": 2,
   "batches_formed": 4,
@@ -42,8 +42,8 @@
  },
  "hwm": {
   "inflight_batches": 4,
-  "pending_batches": 3,
-  "pending_bytes": 6643,
+  "pending_batches": 2,
+  "pending_bytes": 4656,
   "retained_batches": 4,
   "ipc_buffer_bytes": 90
  },
@@ -66,9 +66,17 @@
  },
  "completed_log": [
   {
-   "batch": 0,
+   "batch": 1,
    "outcome": "success",
    "slot": 0,
+   "generation": 1,
+   "attempts": 1,
+   "rows": 8
+  },
+  {
+   "batch": 0,
+   "outcome": "success",
+   "slot": 1,
    "generation": 1,
    "attempts": 1,
    "rows": 8
@@ -84,35 +92,27 @@
   {
    "batch": 3,
    "outcome": "success",
-   "slot": 0,
-   "generation": 1,
-   "attempts": 1,
-   "rows": 6
-  },
-  {
-   "batch": 1,
-   "outcome": "success",
    "slot": 1,
    "generation": 1,
    "attempts": 1,
-   "rows": 8
+   "rows": 6
   }
  ],
  "worker_exit_log": [
   {
    "slot": 1,
    "generation": 1,
-   "pid": 5154,
+   "pid": 4496,
    "reason": "exit",
-   "maxrss_kb": 52376,
+   "maxrss_kb": 51068,
    "exit_code": 0
   },
   {
    "slot": 0,
    "generation": 1,
-   "pid": 5153,
+   "pid": 4495,
    "reason": "exit",
-   "maxrss_kb": 52204,
+   "maxrss_kb": 51068,
    "exit_code": 0
   }
  ]

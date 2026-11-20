@@ -9,3 +9,10 @@ __pycache__/
 # Generated demo outputs / reports
 out/
 *.tmp
+
+# Warehouse scratch state (per-database workspace, WAL/SHM files)
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite.work/
+*.sqlite.work

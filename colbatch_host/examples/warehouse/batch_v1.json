@@ -1,0 +1,26 @@
+{
+  "db": "../../out/warehouse_demo/warehouse.sqlite",
+  "batch_id": "delivery-2025-06-01-1",
+  "expected_parent_version": 0,
+  "cleaning_run": {
+    "manifest": "../../out/warehouse_demo/v1_manifest.json",
+    "success": "../../out/warehouse_demo/v1_success.jsonl",
+    "failure": "../../out/warehouse_demo/v1_failure.jsonl"
+  },
+  "assignments": "../../out/warehouse_demo/assign_v1.jsonl",
+  "cancellations": null,
+  "workspace_dir": "../../out/warehouse_demo/work",
+  "receipt": "../../out/warehouse_demo/receipt_v1.json",
+  "fields": {
+    "shipment_id": "shipment_id",
+    "station_id": "station_id"
+  },
+  "limits": {
+    "max_line_bytes": 8388608,
+    "max_manifest_bytes": 4194304,
+    "read_block_bytes": 1048576,
+    "sqlite_cache_kib": 16384,
+    "busy_timeout_ms": 30000,
+    "access_audit": false
+  }
+}
